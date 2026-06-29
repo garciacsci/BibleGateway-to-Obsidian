@@ -8,17 +8,17 @@ Judg
 Ruth
 1 Sam
 2 Sam
-1 Kgs
-2 Kgs
-1 Chr
-2 Chr
+1 Kings
+2 Kings
+1 Chron
+2 Chron
 Ezr
 Neh
 Esth
 Job
 Ps
 Prov
-Eccl
+Eccles
 Song
 Isa
 Jer
@@ -27,10 +27,10 @@ Ezek
 Dan
 Hos
 Joel
-Amos
+Am
 Obad
 Jonah
-Mic
+Micah
 Nah
 Hab
 Zeph
@@ -46,7 +46,7 @@ Rom
 1 Cor
 2 Cor
 Gal
-Eph
+Ephes
 Phil
 Col
 1 Thess
@@ -54,9 +54,9 @@ Col
 1 Tim
 2 Tim
 Titus
-Phlm
+Philem
 Heb
-Jas
+James
 1 Pet
 2 Pet
 1 John
