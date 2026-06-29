@@ -221,8 +221,18 @@ for ((book_index=0; book_index<66; book_index++)); do
     # Use the bg2md script to read chapter contents
     chapter_content=$(ruby bg2md.rb $bg2md_flags -v $ARG_VERSION $book_no_spaces$chapter)
 
-    # Delete unwanted headers from chapter content
-    chapter_content=$(echo $chapter_content | sed 's/^(.*?)v1/v1/')
+    # Be polite to BibleGateway: rate-limit chapter requests to avoid a throttle/IP block
+    sleep 1
+
+    # Delete unwanted headers from chapter content.
+    # Quote with printf (NOT unquoted `echo`) so bg2md's real newlines survive: word-splitting
+    # would collapse them and glue "## section headings" onto the previous verse line.
+    chapter_content=$(printf '%s' "$chapter_content" | sed 's/^(.*?)v1/v1/')
+
+    # Strip BibleGateway's page-footer chrome. With editorial headers active (-e) it arrives as
+    # standalone "## About / ## Help / ## Our Network / ..." headings; remove from "## About"
+    # to end of the passage. Anchored on the About->Help sequence so scripture text is never hit.
+    chapter_content=$(printf '%s' "$chapter_content" | perl -0777 -pe 's/\n#+\s*About\s*\n#+\s*Help\b.*\z//s')
 
     # Use original header/footer navigation if another method isn't specified
     if [[ $ARG_BC_INLINE == "false" && $ARG_BC_YAML == "false" ]]; then
@@ -278,8 +288,9 @@ for ((book_index=0; book_index<66; book_index++)); do
       chapter_content="$yaml$chapter_content"
     fi
 
-    # Create a new file for this chapter
-    echo -e $chapter_content > "$this_file.md"
+    # Create a new file for this chapter. Quote so bg2md's real newlines are preserved while
+    # `echo -e` still expands the literal "\n" sequences the wrapper above injected.
+    echo -e "$chapter_content" > "$this_file.md"
 
     # Create a folder for this book of the Bible if it doesn't exist, then move the new file into it
     mkdir -p "./$bible_folder/$book"; mv "$this_file".md "./$bible_folder/$book"
@@ -293,7 +304,7 @@ for ((book_index=0; book_index<66; book_index++)); do
 
   # Create an overview file for each book of the Bible:
   overview_file="links: [[$bible_name]]\n# $book\n\n[[$abbreviation 1|Start Reading →]]"
-  echo -e $overview_file > "$book.md"
+  echo -e "$overview_file" > "$book.md"
   mv "$book.md" "./$bible_folder/$book"
 
 done # End of book loop
@@ -318,6 +329,11 @@ find . -name "*.md" -print0 | xargs -0 perl -pi -e 's/######\s([0-9]\s|[0-9][0-9
 
 # Delete crossreferences
 find . -name "*.md" -print0 | xargs -0 perl -pi -e 's/\<crossref intro.*crossref\>//g'
+
+# Strip BibleGateway page-footer chrome that bg2md glues onto the last verse of each
+# chapter (e.g. "Praise the LORD!AboutHelpOur NetworkSocialPreferences ... Preferences").
+# Slurp mode (-0777) so the match crosses newlines; leaves the verse text intact.
+find . -name "*.md" -print0 | xargs -0 perl -0777 -pi -e 's/About\s*Help\s*Our\s*Network.*\z//s'
 
 if [[ $ARG_VERBOSE == "true" ]]; then
   echo "Download complete. Markdown files ready for Obsidian import."
